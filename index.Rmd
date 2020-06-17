@@ -1,6 +1,6 @@
 ---
 title: "GF-0604 Procesamiento de datos geográficos<br>Laboratorio 04: R - Datos raster 1"
-author: "Manuel Vargas"
+author: "Matthias Pelz - B95845"
 date: "2020-06-11"
 output:
   html_document:
@@ -13,31 +13,35 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library("sf")
+library("dplyr")
+library("leaflet")
+library("raster")
+library("rgdal")
+
+
 ```
 
-## Descripción general
-En este laboratorio, elaborará un mapa web con el paquete [Leaflet](https://cran.r-project.org/web/packages/leaflet/) del lenguaje de programación [R](https://www.r-project.org/), para visualizar datos ambientales y de biodiversidad. El resultado final será un documento en la sintaxis [R Markdown](https://rmarkdown.rstudio.com/), publicado en [GitHub Pages](https://pages.github.com/).
 
-## Fecha de entrega y entregables
-La fecha límite de entrega de este laboratorio es el **jueves 18 de junio de 2020**. **NO SE ACEPTARÁN ENTREGAS DESPUÉS DE ESA FECHA**. Debe enviarle al profesor por correo electrónico la dirección del sitio en GitHub Pages resultante.
+```{r setup, include=FALSE}
+altitud <- getData("worldclim", var="alt", res=.5, lon=-84, lat=10)
+cr_altitud <- crop(altitud, extent(-86, -82.3, 8, 11.3))  
 
-La tarea puede realizarse en grupos de un máximo de tres estudiantes.
+precipitacion <- getData("worldclim", var="prec", res=.5, lon=-84, lat=10)
+cr_precipitacion <- crop(precipitacion, extent(-86, -82.3, 8, 11.3))
 
-## Trabajo previo
-Se recomienda leer el material preparado por el profesor y consultar los recursos listados en:
-
-* [Lección 10: el lenguaje de programación R - Datos raster](https://geoprocesamiento-2020i.github.io/leccion-10-r-datos-raster/).
-
-## Tareas a realizar
-Elabore un mapa web que contenga:
-
-1. (10%) Tres capas base tipo  ```Tile```.
-2. (20%) Dos capas raster: altitud y promedio de precipitación, provenientes de la base de datos [WorldClim](https://www.worldclim.org/) y recortadas para los límites de Costa Rica y en resolución de 30x30 segundos.
-3. (20%) Dos capas vectoriales correspondientes a los registros de presencia de las especies de aves [Ara ambiguus](https://github.com/geoprocesamiento-2020i/datos/blob/master/biodiversidad/registros-presencia/cr/cr-ara-ambiguus.geojson) (lapa verde) y [Pharomachrus mocinno](https://github.com/geoprocesamiento-2020i/datos/blob/master/biodiversidad/registros-presencia/cr/cr_pharomachrus_mocinno.geojson) (quetzal).
-4. (20%) Un control de capas que permita activar y desactivar todas las capas.
-5. (20%) Leyendas para las dos capas raster. Elija con cuidado las paletas de colores de ambas capas.
-6. (10%) Un control de mapa de referencia (_MiniMap_).
+```
 
 
 
-Los mapas deben ser implementados con el paquete ```Leaflet```.
+```{r setup, include=FALSE}
+cr_ara_ambiguus <- st_read("https://raw.githubusercontent.com/geoprocesamiento-2020i/datos/master/biodiversidad/registros-presencia/cr/cr-ara-ambiguus.geojson")
+
+```
+
+
+```{r setup, include=FALSE}
+cr_pharomachrus_mocinno <- st_read("https://raw.githubusercontent.com/geoprocesamiento-2020i/datos/master/biodiversidad/registros-presencia/cr/cr_pharomachrus_mocinno.geojson")
+
+```
+
