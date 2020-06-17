@@ -1,47 +1,121 @@
 ---
-title: "GF-0604 Procesamiento de datos geográficos<br>Laboratorio 04: R - Datos raster 1"
+title: 'GF-0604 Procesamiento de datos geográficos<br>Laboratorio 04: R - Datos raster
+  1'
 author: "Matthias Pelz - B95845"
-date: "2020-06-11"
+date: '2020-06-11'
 output:
   html_document:
-    theme: readable    
-    toc: true
+    theme: readable
+    toc: yes
     toc_float:
-      collapsed: false
-      smooth_scroll: false  
+      collapsed: no
+      smooth_scroll: no
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
 library("sf")
 library("dplyr")
 library("leaflet")
 library("raster")
 library("rgdal")
 
+```
+
+
+```{r}
+altitude <- getData("worldclim", var="alt", res=.5, lon=-84, lat=10)
+cr_altitude <- crop(altitude, extent(-86, -82.3, 8, 11.3))  
+
+precipitation <- getData("worldclim", var="bio", res=.5, lon=-84, lat=10)
+precipitation <- precipitation[[c(12)]]
+names(precipitation) <- c("Prec")
+cr_precipitation <- crop(precipitation, extent(-86, -82.3, 8, 11.3))
 
 ```
 
 
-```{r setup, include=FALSE}
-altitud <- getData("worldclim", var="alt", res=.5, lon=-84, lat=10)
-cr_altitud <- crop(altitud, extent(-86, -82.3, 8, 11.3))  
-
-precipitacion <- getData("worldclim", var="prec", res=.5, lon=-84, lat=10)
-cr_precipitacion <- crop(precipitacion, extent(-86, -82.3, 8, 11.3))
-
-```
-
-
-
-```{r setup, include=FALSE}
+```{r}
 cr_ara_ambiguus <- st_read("https://raw.githubusercontent.com/geoprocesamiento-2020i/datos/master/biodiversidad/registros-presencia/cr/cr-ara-ambiguus.geojson")
 
-```
-
-
-```{r setup, include=FALSE}
 cr_pharomachrus_mocinno <- st_read("https://raw.githubusercontent.com/geoprocesamiento-2020i/datos/master/biodiversidad/registros-presencia/cr/cr_pharomachrus_mocinno.geojson")
 
 ```
 
+
+```{r}
+pal <- colorNumeric(
+  c('#7570b3', '#66a61e', '#d95f02'), 
+  values(cr_altitude), 
+  na.color = "transparent"
+)
+pal1 <- colorNumeric(
+  c('#377eb8', '#4daf4a', '#e41a1c'), 
+  values(cr_precipitation), 
+  na.color = "transparent"
+)
+
+# Mapa leaflet
+
+mapa <- leaflet() %>% 
+  addProviderTiles(providers$Esri.WorldImagery, group = "Imágenes de ESRI") %>% 
+  addProviderTiles(providers$Stamen.TonerLite, group = "Stamen Toner Lite") %>%
+  addProviderTiles(providers$OpenStreetMap.Mapnik, group = "OpenStreetMap") %>%
+  addCircleMarkers(data = cr_ara_ambiguus,
+                   stroke = F,
+                   radius = 4,
+                   fillColor = 'yellow',
+                   fillOpacity = 1,
+                   group = "Ara ambiguus",
+                   popup = paste(cr_ara_ambiguus$locality, 
+                                 cr_ara_ambiguus$year, 
+                                 sep = '<br/>'
+                           )
+  ) %>%
+    addCircleMarkers(data = cr_pharomachrus_mocinno,
+                   stroke = F,
+                   radius = 4,
+                   fillColor = 'green',
+                   fillOpacity = 1,
+                   group = "Pharamachrus Moccino",
+                   popup = paste(cr_pharomachrus_mocinno$locality, 
+                                 cr_pharomachrus_mocinno$year, 
+                                 sep = '<br/>'
+                           )
+  ) %>%
+  addRasterImage(cr_altitude,
+                 colors = pal, 
+                 opacity = 0.8, 
+                 group = "Altitud"
+                 
+) %>% 
+   addRasterImage(cr_precipitation,
+                 colors = pal1, 
+                 opacity = 0.8, 
+                 group = "Precipitacion"
+                 
+) %>%
+addLayersControl(
+    baseGroups = c("OpenStreetMap", "Stamen Toner Lite", "Imágenes de ESRI"),
+    overlayGroups = c("Altitud", "Ara ambiguus","Pharamachrus Moccino", "Precipitacion"),
+    options = layersControlOptions(collapsed = FALSE)    
+  ) %>%
+  addLegend("topleft", pal = pal,
+            values = values(cr_altitude), 
+            title = "Altitud" 
+   ) %>%
+  addLegend("bottomleft",pal = pal1, 
+            values = values(cr_precipitation), 
+            title = "Precipitacion"
+  ) %>%
+  addMiniMap(
+    toggleDisplay = TRUE,
+    position = "bottomright",
+    tiles = providers$Stamen.TonerLite
+  )
+mapa
+
+```
